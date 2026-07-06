@@ -1,0 +1,35 @@
+name: Update chnroutes
+
+on:
+  schedule:
+    # 每天 03:30 UTC（北京时间 11:30）刷新中国大陆 IP 段
+    - cron: "30 3 * * *"
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: write # 允许提交回仓库
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rebuild chnroutes data
+        run: node scripts/build-chnroutes.mjs
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- src/chnroutes-data.ts; then
+            echo "chnroutes 无变化，跳过提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/chnroutes-data.ts
+          git commit -m "chore: 每日更新 chnroutes 数据"
+          git push
