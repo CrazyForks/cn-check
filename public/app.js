@@ -65,6 +65,9 @@ const NEAR_CHINA_TIMEZONES = ["Asia/Hong_Kong", "Asia/Macau"];
  * ============================================================ */
 const $ = (sel) => document.querySelector(sel);
 
+// 把敏感值（IP、归属国等）包进可被“隐藏敏感信息”模式模糊的行内标记
+const secret = (v) => `<span class="secret">${v}</span>`;
+
 function probe(url, timeout = THRESHOLDS.fetchTimeout) {
   // no-cors 探测：能拿到（不透明）响应说明网络层可达，抛错/超时说明被阻断
   const ctrl = new AbortController();
@@ -367,7 +370,7 @@ async function checkWebRTC(ipInfo) {
     return {
       confidence: 1,
       chinaLeak: true,
-      flags: [`WebRTC 泄露的真实公网 IP (${chinaLeak.ip}) 属于中国大陆`],
+      flags: [`WebRTC 泄露的真实公网 IP (${secret(chinaLeak.ip)}) 属于中国大陆`],
       summary: "真实 IP 在中国大陆",
       detail:
         `STUN 公网地址: ${leaked.join(", ")}\n` +
@@ -453,7 +456,7 @@ async function checkDnsLeak() {
     return {
       confidence: 1,
       chinaDns: true,
-      flags: [`DNS 解析器出口 (${chinaOne.ip}) 在中国大陆`],
+      flags: [`DNS 解析器出口 (${secret(chinaOne.ip)}) 在中国大陆`],
       summary: "解析器在中国大陆",
       detail:
         `观测到的解析器出口:\n${list}\n` +
@@ -692,7 +695,18 @@ async function runAll() {
   $("#rerun").disabled = false;
 }
 
+function setupSecretToggle() {
+  const btn = $("#toggle-secret");
+  const label = btn.querySelector(".toggle-secret-label");
+  btn.addEventListener("click", () => {
+    const hidden = document.body.classList.toggle("redacted");
+    btn.setAttribute("aria-pressed", String(hidden));
+    label.textContent = hidden ? "显示敏感信息" : "隐藏敏感信息";
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("#rerun").addEventListener("click", runAll);
+  setupSecretToggle();
   runAll();
 });
