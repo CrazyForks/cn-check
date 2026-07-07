@@ -205,7 +205,7 @@ function checkTwFlag() {
     return {
       confidence: 1,
       summary: "🇹🇼 被系统屏蔽",
-      flags: ["某个旗帜 emoji 被屏蔽：设备为大陆行货或地区设为中国大陆，VPN 无法掩盖此特征"],
+      flags: ["旗帜 emoji 被屏蔽：设备为大陆行货或地区设为中国大陆，VPN 无法掩盖此特征"],
       detail:
         "🇨🇳 正常渲染为彩色旗帜，🇹🇼 却" +
         (tw.ligates ? "被替换成黑白占位符" : "未合成旗帜") +
@@ -478,7 +478,7 @@ const CHECK_DEFS = [
   { key: "timezone", icon: "🕐", name: "浏览器时区" },
   { key: "language", icon: "🀄️", name: "浏览器语言" },
   { key: "dnsLeak", icon: "🔀", name: "DNS 解析器归属" },
-  { key: "twFlag", icon: "🏳️", name: "某个旗帜 Emoji" },
+  { key: "twFlag", icon: "🏳️", name: "旗帜 Emoji" },
   { key: "intlLatency", icon: "🌍", name: "国际站点延迟" },
   { key: "tzMismatch", icon: "🎭", name: "时区一致性" },
   { key: "webrtc", icon: "🔓", name: "WebRTC 泄露" },
