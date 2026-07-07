@@ -21,9 +21,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # 支持 amd64（多数 VPS）与 arm64（如 Ampere/树莓派）
+      # 支持 amd64 与 arm64
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
 

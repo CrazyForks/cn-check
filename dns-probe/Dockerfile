@@ -11,7 +11,7 @@ FROM scratch
 COPY --from=build /dns-probe /dns-probe
 # DNS(UDP) 与查询 API(TCP)
 EXPOSE 53/udp
-EXPOSE 8080/tcp
+EXPOSE 8653/tcp
 ENTRYPOINT ["/dns-probe"]
 # 默认参数，可在 docker run / compose 中覆盖
-CMD ["-zone", "d.example.com", "-answer", "127.0.0.1", "-dns", ":53", "-http", ":8080"]
+CMD ["-zone", "d.example.com", "-answer", "127.0.0.1", "-dns", ":53", "-http", ":8653"]

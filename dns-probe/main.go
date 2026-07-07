@@ -80,7 +80,7 @@ var (
 	zone     = flag.String("zone", "d.example.com", "本服务器权威的委派子域（末尾不带点）")
 	answerIP = flag.String("answer", "127.0.0.1", "A 记录返回的 IPv4（一般填本机公网 IP）")
 	dnsAddr  = flag.String("dns", ":53", "DNS 监听地址")
-	httpAddr = flag.String("http", ":8080", "查询 API 监听地址")
+	httpAddr = flag.String("http", ":8653", "查询 API 监听地址")
 )
 
 func main() {

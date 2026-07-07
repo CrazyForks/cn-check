@@ -8,14 +8,9 @@ services:
     restart: unless-stopped
     # 通过环境变量配置（见 .env.example）；未设置时用默认值
     command:
-      - "-zone"
-      - "${PROBE_ZONE:-d.example.com}"
-      - "-answer"
-      - "${PROBE_ANSWER:-127.0.0.1}"
-      - "-dns"
-      - ":53"
-      - "-http"
-      - ":8080"
+      - -zone=${PROBE_ZONE:-d.example.com}
+      - -answer=${PROBE_ANSWER:-127.0.0.1}
+      - -http=:8653
     ports:
       - "53:53/udp" # 权威 DNS
-      - "127.0.0.1:8080:8080" # 查询 API 只绑本机，由前置 HTTPS 反代暴露
+      - "127.0.0.1:8653:8653" # 查询 API 只绑本机，由前置 HTTPS 反代暴露
