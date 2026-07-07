@@ -39,6 +39,10 @@ main {
   padding: 2rem 1rem 3rem;
 }
 
+header {
+  position: relative;
+}
+
 header h1 {
   margin: 0 0 0.5rem;
   font-size: 1.7rem;
@@ -49,6 +53,19 @@ header h1 {
   margin: 0 0 1.5rem;
   font-size: 0.95rem;
 }
+
+#github-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--text);
+  opacity: 0.85;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+#github-link:hover { opacity: 1; }
 
 /* ---- 评分区 ---- */
 #score {
