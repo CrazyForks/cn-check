@@ -13,7 +13,7 @@
 | 大陆站点延迟     |   12 | 对百度、腾讯、哔哩哔哩 favicon 各采样 3 次取每站最小值，再取三站中**第二低**的值打分（单站可能有海外 CDN 节点，需两站佐证）；< 60ms 说明物理位置在大陆或紧邻                                          | 物理延迟，VPN无法掩盖                  |
 | 浏览器时区       |   11 | `Intl.DateTimeFormat().resolvedOptions().timeZone` 为 `Asia/Shanghai` 等                                                                                                                              | 非东八区会导致生活的不便，难以隐藏     |
 | 浏览器语言       |   10 | `navigator.languages` 首选 `zh-CN` / `zh-Hans`                                                                                                                                                        | 无简体中文字体会导致生活不便，难以隐藏 |
-| DNS 解析器归属   |    9 | 前端触发 `<uuid>.d.palemoky.com` 解析，VPS 上的 dns-probe 记录解析器出口 IP，Worker 代理回收并 chnroutes 判定；解析器在大陆而 HTTP 在境外 = 分流代理特征。需部署 `dns-probe/`，未部署则此项跳过不计分 |                                        |
+| DNS 解析器归属   |    9 | 前端触发 `<uuid>.<DNS_PROBE_ZONE>` 解析，VPS 上的 dns-probe 记录解析器出口 IP，Worker 代理回收并 chnroutes 判定；解析器在大陆而 HTTP 在境外 = 分流代理特征。需部署 `dns-probe/` 并配置变量（见已知局限），未配置则此项跳过不计分 |                                        |
 | 台湾旗帜 Emoji   |    8 | 大陆行货或地区设为中国的 Apple 设备会屏蔽 🇹🇼（canvas 对比连字与拆分渲染 + 彩色像素判定，用 🇨🇳 做对照）                                                                                                | 设备级信号，VPN 无法掩盖               |
 | 国际站点延迟     |    6 | 以 AWS 美东/美西/东京/新加坡区域端点为参照（位置固定、无全球 CDN）；「大陆很近 + 美国异常慢（>300ms）」是跨境线路拥堵/代理服务器和GFW 开销的典型形态，港/新/日/韩直连美国多在 150~250ms               | 物理延迟，VPN无法掩盖                  |
 | 时区一致性       |    3 | 浏览器时区与 IP 归属地时区不一致 → 代理迹象；若浏览器时区指向中国则计入中国分                                                                                                                         |                                        |
@@ -42,6 +42,7 @@ public/                                 // 静态页面（Cloudflare Static Asse
   app.js                                // 全部检测与打分逻辑（无依赖的原生 JS）
   style.css
 src/index.ts                            // Worker：仅处理 /api/*
+  GET /api/config                       // 前端运行时配置（DNS 泄露探测的委派子域，未配置返回 null）
   GET /api/ip                           // 返回 request.cf 中的 IP、国家、ASN、时区、colo，并附 chnroutes 判定
   GET /api/ip-china                     // 判断任意 IPv4 是否属于中国大陆（供 WebRTC 泄露比对）
   GET /api/dns-lookup                   // 服务端代理 VPS 的 dns-probe，回收解析器出口 IP 并 chnroutes 判定
@@ -66,6 +67,6 @@ npm run deploy   # 部署到 Cloudflare
 
 ## 已知局限
 
-- **DNS 解析器检测依赖 VPS**：该项需要一台自有 VPS 部署 `dns-probe/` 作权威 DNS 观测解析器出口。前端与 Worker 代理（`/api/dns-lookup`）已合入主站；VPS 未部署或不可达时此项自动跳过、不计分，不影响其它检测。
+- **DNS 解析器检测依赖 VPS**：该项需要一台自有 VPS 部署 `dns-probe/` 作权威 DNS 观测解析器出口，并配置 `DNS_PROBE_ZONE`（委派子域）与 `DNS_PROBE_LOOKUP`（lookup 接口地址）两个变量——生产环境用 `wrangler secret put` 或 Dashboard 的 Secret 类型变量（明文 Text 变量会被 `wrangler deploy` 覆盖清除），本地开发复制 `.dev.vars.example` 为 `.dev.vars` 填写。未配置或 VPS 不可达时此项自动跳过、不计分，不影响其它检测。
 - **全局代理下的 VPN 用户**：若所有流量都走代理且时区/语言已伪装，则与真实海外用户不可区分——这也是真实网站面临的同样极限。
 - **误报来源**：广告拦截插件会拦截对 Google/百度的探测；公司防火墙可能屏蔽 UDP（影响 WebRTC 检测）或大陆站点。

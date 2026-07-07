@@ -1,0 +1,7 @@
+# 复制为 .dev.vars（已 gitignore）供本地开发使用；生产环境用 wrangler secret put 配置同名变量。
+# 两项须成对配置，缺任一则「DNS 解析器归属」检测自动跳过。
+
+# 委派给 dns-probe 的权威子域，前端请求 <uuid>.<该域> 触发解析
+DNS_PROBE_ZONE=d.example.com
+# dns-probe 的 lookup 接口，由 Worker 服务端代理访问
+DNS_PROBE_LOOKUP=http://ns.example.com/lookup

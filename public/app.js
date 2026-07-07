@@ -17,10 +17,6 @@ const WEIGHTS = {
   webrtc: 4,       // WebRTC 泄露的真实公网 IP 在中国，或与 HTTP 出口不一致
 };
 
-// DNS 泄露检测用的委派子域（VPS 上的 dns-probe 对其权威）。
-// 前端请求 <uuid>.<该域> 触发解析，解析器出口 IP 由 /api/dns-lookup 回收。
-const DNS_PROBE_ZONE = "d.palemoky.com";
-
 const THRESHOLDS = {
   fetchTimeout: 4000,   // 可达性探测超时 (ms)
   latencySamples: 3,    // 每个目标采样次数，取最小值
@@ -405,10 +401,25 @@ async function checkWebRTC(ipInfo) {
 }
 
 async function checkDnsLeak() {
+  // 委派子域由部署方配置（DNS_PROBE_ZONE，见 README），未配置则跳过此项
+  let zone = null;
+  try {
+    const res = await fetch("/api/config", { cache: "no-store" });
+    zone = (await res.json()).dnsProbeZone;
+  } catch {
+    // 取不到配置按未配置处理
+  }
+  if (!zone) {
+    return {
+      confidence: 0,
+      summary: "未配置",
+      detail: "未配置 DNS 泄露探测服务（DNS_PROBE_ZONE，见 README），此项跳过",
+    };
+  }
   const uuid = (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-z0-9-]/gi, "");
   // 1. 请求 <uuid>.<zone> 触发浏览器所用递归解析器去查询 VPS 权威服务器。
   //    连接本身成功与否无所谓——DNS 解析在建立连接前就已发生。
-  await fetch(`https://${uuid}.${DNS_PROBE_ZONE}/`, { mode: "no-cors", cache: "no-store" })
+  await fetch(`https://${uuid}.${zone}/`, { mode: "no-cors", cache: "no-store" })
     .catch(() => {});
   // 2. 给解析器留一点落库时间，再经本站 Worker 代理回收解析器出口 IP
   await new Promise((r) => setTimeout(r, 1500));

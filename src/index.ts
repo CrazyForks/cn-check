@@ -2,6 +2,9 @@ import { isChinaIP } from "./chnroutes";
 
 export interface Env {
   ASSETS: Fetcher;
+  // DNS 泄露探测服务（可选，wrangler.jsonc 的 vars 中配置；未配置则该检测跳过）
+  DNS_PROBE_ZONE?: string;
+  DNS_PROBE_LOOKUP?: string;
 }
 
 const JSON_HEADERS = {
@@ -9,15 +12,14 @@ const JSON_HEADERS = {
   "cache-control": "no-store",
 };
 
-// DNS 泄露探测服务（部署在 VPS 上，见 dns-probe/）的 lookup 接口。
-// 由 Worker 服务端代理，浏览器只与本站 HTTPS 通信，规避混合内容与跨域问题。
-const DNS_PROBE_LOOKUP = "http://ns-probe.palemoky.com/lookup";
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     switch (url.pathname) {
+      case "/api/config":
+        // 前端运行时配置（目前只有 DNS 泄露探测的委派子域）
+        return handleConfig(env);
       case "/api/ip":
         return handleIp(request);
       case "/api/ip-china":
@@ -25,7 +27,7 @@ export default {
         return handleIpChina(url);
       case "/api/dns-lookup":
         // 服务端代理 VPS 上的 DNS 泄露探测服务，返回该 uuid 对应的解析器出口 IP
-        return handleDnsLookup(url);
+        return handleDnsLookup(url, env);
       default:
         // run_worker_first 只匹配 /api/*，走到这里说明是未知的 API 路径
         return new Response(JSON.stringify({ error: "not found" }), {
@@ -35,6 +37,15 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
+
+function handleConfig(env: Env): Response {
+  // zone 与 lookup 必须成对配置，缺一则前端直接跳过该检测
+  const enabled = !!(env.DNS_PROBE_ZONE && env.DNS_PROBE_LOOKUP);
+  return new Response(
+    JSON.stringify({ dnsProbeZone: enabled ? env.DNS_PROBE_ZONE : null }),
+    { headers: JSON_HEADERS }
+  );
+}
 
 function handleIp(request: Request): Response {
   const cf = (request.cf ?? {}) as IncomingRequestCfProperties;
@@ -67,7 +78,7 @@ function handleIpChina(url: URL): Response {
   });
 }
 
-async function handleDnsLookup(url: URL): Promise<Response> {
+async function handleDnsLookup(url: URL, env: Env): Promise<Response> {
   const id = url.searchParams.get("id") ?? "";
   // 仅允许简单 id（uuid 形态），避免被用作开放代理
   if (!/^[a-zA-Z0-9-]{1,64}$/.test(id)) {
@@ -76,8 +87,14 @@ async function handleDnsLookup(url: URL): Promise<Response> {
       headers: JSON_HEADERS,
     });
   }
+  if (!env.DNS_PROBE_LOOKUP) {
+    return new Response(
+      JSON.stringify({ id, resolvers: [], available: false }),
+      { headers: JSON_HEADERS }
+    );
+  }
   try {
-    const upstream = await fetch(`${DNS_PROBE_LOOKUP}?id=${id}`, {
+    const upstream = await fetch(`${env.DNS_PROBE_LOOKUP}?id=${id}`, {
       signal: AbortSignal.timeout(4000),
     });
     if (!upstream.ok) throw new Error(`upstream ${upstream.status}`);

@@ -3,6 +3,11 @@
   "name": "china-access-check",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-06",
+  // DNS 泄露探测服务（可选，见 dns-probe/）不在此配置，以免在仓库中暴露自有域名：
+  //   生产环境：wrangler secret put DNS_PROBE_ZONE / DNS_PROBE_LOOKUP
+  //            （或 Dashboard 中添加 Secret 类型变量；明文 Text 变量会被 deploy 覆盖清除）
+  //   本地开发：复制 .dev.vars.example 为 .dev.vars 并填写
+  // 未配置则「DNS 解析器归属」检测自动跳过，不影响其它检测。
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
